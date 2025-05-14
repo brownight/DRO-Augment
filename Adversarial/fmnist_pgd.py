@@ -7,23 +7,23 @@ import torchattacks
 import argparse
 import os
 
-import augmentations  # 确保这个模块已正确导入
+import augmentations  
 import numpy as np
 import torch.nn as nn
 from torchvision import datasets, transforms, models
 from src.cifar_models.preresnet import preactwideresnet18, preactresnet18
-#from src.cifar_models.wideresnet import wideresnet28  # 确保导入 wideresnet28
-from torchvision.datasets import VisionDataset  # 修正后的导入
+#from src.cifar_models.wideresnet import wideresnet28  
+from torchvision.datasets import VisionDataset 
 
 import torch
 import torch.nn.functional as F
 from torchvision import datasets, transforms
 
-from src.noisy_mixup import mixup_criterion  # 确保这个模块已正确导入
-from src.tools import get_lr  # 确保这个模块已正确导入
-from aug_utils import *  # 确保这个模块已正确导入
+from src.noisy_mixup import mixup_criterion  
+from src.tools import get_lr  
+from aug_utils import *  
 
-from PIL import Image  # 确保导入 PIL
+from PIL import Image  
 
 
 parser = argparse.ArgumentParser(description='Trains a CIFAR Classifier', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -358,7 +358,7 @@ def train(net, train_loader, optimizer, scheduler, device, criterion):
         
             if args.alpha > 0:
                 loss = mixup_criterion(criterion, outputs, targets_a, targets_b, lam)
-                # 计算混合标签的准确率（可以根据需求调整）
+                
                 _, preds = torch.max(outputs, 1)
                 correct += (preds == targets_a).sum().item() * lam + (preds == targets_b).sum().item() * (1 - lam)
                 total += targets.size(0)
@@ -386,7 +386,7 @@ def train(net, train_loader, optimizer, scheduler, device, criterion):
             if args.alpha > 0:
                 logits_clean, logits_aug1, logits_aug2 = torch.split(logits_all, images[0].size(0))
                 loss = mixup_criterion(criterion, logits_clean, targets_a, targets_b, lam)
-                # 计算混合标签的准确率
+                
                 _, preds = torch.max(logits_clean, 1)
                 correct += (preds == targets_a).sum().item() * lam + (preds == targets_b).sum().item() * (1 - lam)
                 total += targets.size(0)
@@ -442,18 +442,18 @@ def main():
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-    # 定义 MNIST 数据集的标准预处理步骤
+   
 
     preprocess = transforms.Compose([
-            transforms.Resize(32),  # 调整图像大小为 32x32
-            transforms.ToTensor(),  # 转换为张量
-            transforms.Lambda(lambda x: x.repeat(3, 1, 1)),  # 将单通道转换为三通道
-            transforms.Normalize((0.2860, 0.2860, 0.2860),  # 归一化（根据 Fashion-MNIST 的均值）
+            transforms.Resize(32), 
+            transforms.ToTensor(), 
+            transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
+            transforms.Normalize((0.2860, 0.2860, 0.2860), 
                          (0.3530, 0.3530, 0.3530))
     ])
     test_transform = preprocess
   
-    # 加载 fMNIST 数据集
+   
     train_dataset = datasets.FashionMNIST(root='./data', train=True, transform = test_transform, download= True)
                                #transform=train_transform, download=True)
     test_dataset = datasets.FashionMNIST(root='./data', train=False, 
@@ -472,7 +472,7 @@ def main():
 
     
     
-     # Create model
+    
     if args.arch == 'preactresnet18':
         net = preactresnet18(num_classes=num_classes)
     elif args.arch == 'preactwideresnet18':
@@ -482,14 +482,14 @@ def main():
     else:
         raise ValueError(f"Unsupported architecture: {args.arch}")
 
-    # 将模型移动到适当的设备（GPU 或 CPU）
+   
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     net = net.to(device)
     optimizer = torch.optim.SGD(net.parameters(),
         args.learning_rate, momentum=args.momentum,
         weight_decay=args.decay, nesterov=True)
 
-    # 将模型分布到所有可用的 GPU
+    
     #net = torch.nn.DataParallel(net).to(device)
 
     
@@ -498,10 +498,10 @@ def main():
         optimizer,
         lr_lambda=lambda step: get_lr(
             step, args.epochs * len(train_loader),
-            1,  # lr_lambda 计算乘法因子
+            1, 
             1e-6 / args.learning_rate))
     
-    #criterion = CustomLoss(C=1, N=100, regularization_weight=0.02, use_mcmc=False).to(device)
+    
     criterion = CustomLoss(rho = 0.08, q=1).to(device)
     
     # Training loop
