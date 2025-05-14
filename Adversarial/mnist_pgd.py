@@ -7,23 +7,23 @@ import torchattacks
 import argparse
 import os
 
-import augmentations  # 确保这个模块已正确导入
+import augmentations  
 import numpy as np
 import torch.nn as nn
 from torchvision import datasets, transforms, models
 from src.cifar_models.preresnet import preactwideresnet18, preactresnet18
-#from src.cifar_models.wideresnet import wideresnet28  # 确保导入 wideresnet28
-from torchvision.datasets import VisionDataset  # 修正后的导入
+#from src.cifar_models.wideresnet import wideresnet28  
+from torchvision.datasets import VisionDataset 
 
 import torch
 import torch.nn.functional as F
 from torchvision import datasets, transforms
 
-from src.noisy_mixup import mixup_criterion  # 确保这个模块已正确导入
-from src.tools import get_lr  # 确保这个模块已正确导入
-from aug_utils import *  # 确保这个模块已正确导入
+from src.noisy_mixup import mixup_criterion 
+from src.tools import get_lr  
+from aug_utils import *  
 
-from PIL import Image  # 确保导入 PIL
+from PIL import Image 
 
 
 parser = argparse.ArgumentParser(description='Trains a CIFAR Classifier', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -33,7 +33,7 @@ parser.add_argument('--arch', '-m', type=str, default='preactresnet18',
 parser.add_argument('--seed', type=int, default=1, metavar='S', help='random seed (default: 1)')
 
 # Optimization options
-parser.add_argument('--epochs', '-e', type=int, default=50, help='Number of epochs to train.')  # 建议增加 epochs 数量
+parser.add_argument('--epochs', '-e', type=int, default=50, help='Number of epochs to train.')  
 parser.add_argument('--learning-rate', '-lr', type=float, default=0.001, help='Initial learning rate.')
 parser.add_argument('--train-batch-size', type=int, default=128, help='Batch size.')
 parser.add_argument('--test-batch-size', type=int, default=1000, help='Test batch size.')
@@ -50,7 +50,7 @@ parser.add_argument('--jsd', type=int, default=1, metavar='S', help='JSD consist
 parser.add_argument('--all-ops', '-all', action='store_true', help='Turn on all operations (+brightness,contrast,color,sharpness).')
 
 # Noisy Feature Mixup options
-parser.add_argument('--alpha', type=float, default=1.0, metavar='S', help='for mixup')  # 根据用户之前的运行命令设置为 1.0
+parser.add_argument('--alpha', type=float, default=1.0, metavar='S', help='for mixup')  
 parser.add_argument('--manifold_mixup', type=int, default=1, metavar='S', help='manifold mixup (default: 1)')
 parser.add_argument('--add_noise_level', type=float, default=0.1, metavar='S', help='level of additive noise')
 parser.add_argument('--mult_noise_level', type=float, default=0.1, metavar='S', help='level of multiplicative noise')
@@ -358,7 +358,7 @@ def train(net, train_loader, optimizer, scheduler, device, criterion):
         
             if args.alpha > 0:
                 loss = mixup_criterion(criterion, outputs, targets_a, targets_b, lam)
-                # 计算混合标签的准确率（可以根据需求调整）
+                
                 _, preds = torch.max(outputs, 1)
                 correct += (preds == targets_a).sum().item() * lam + (preds == targets_b).sum().item() * (1 - lam)
                 total += targets.size(0)
@@ -386,7 +386,7 @@ def train(net, train_loader, optimizer, scheduler, device, criterion):
             if args.alpha > 0:
                 logits_clean, logits_aug1, logits_aug2 = torch.split(logits_all, images[0].size(0))
                 loss = mixup_criterion(criterion, logits_clean, targets_a, targets_b, lam)
-                # 计算混合标签的准确率
+                
                 _, preds = torch.max(logits_clean, 1)
                 correct += (preds == targets_a).sum().item() * lam + (preds == targets_b).sum().item() * (1 - lam)
                 total += targets.size(0)
@@ -442,12 +442,12 @@ def main():
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-# 给 AugMixDataset 用的基础变换，只调整大小
+
     base_transform = transforms.Compose([
-        transforms.Resize(32),  # 调整图像大小为 32x32
+        transforms.Resize(32), 
     ])
 
-    # 完整的预处理流程，用于 AugMix 内部和测试集
+   
     preprocess = transforms.Compose([
         transforms.Resize(32),  
         transforms.ToTensor(),
@@ -456,19 +456,19 @@ def main():
                          (0.3081, 0.3081, 0.3081))
     ])
 
-    # 加载 Fashion-MNIST 数据集
+    
     if args.augmix == 1:
-        # 如果使用 AugMix，基础数据集只做 resize
+       
         train_dataset = datasets.MNIST(
             root='./data', 
             train=True,
             transform=base_transform,  # 只调整大小
             download=True
         )
-        # 然后用 AugMixDataset 包装
+       
         train_dataset = AugMixDataset(train_dataset, preprocess, args.jsd, args)
     else:
-        # 如果不使用 AugMix，使用完整的预处理
+       
         train_dataset = datasets.MNIST(
             root='./data', 
             train=True,
@@ -476,7 +476,7 @@ def main():
             download=True
         )
 
-    # 测试集使用完整的预处理
+   
     test_dataset = datasets.MNIST(
         root='./data', 
         train=False,
@@ -505,14 +505,14 @@ def main():
     else:
         raise ValueError(f"Unsupported architecture: {args.arch}")
 
-    # 将模型移动到适当的设备（GPU 或 CPU）
+   
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     net = net.to(device)
     optimizer = torch.optim.SGD(net.parameters(),
         args.learning_rate, momentum=args.momentum,
         weight_decay=args.decay, nesterov=True)
 
-    # 将模型分布到所有可用的 GPU
+    
     #net = torch.nn.DataParallel(net).to(device)
 
     
@@ -524,7 +524,7 @@ def main():
             1,  # lr_lambda 计算乘法因子
             1e-6 / args.learning_rate))
     
-    #criterion = CustomLoss(C=2, N=100, regularization_weight=0.8, use_mcmc=False).to(device)
+   
     criterion = CustomLoss(rho = 0.88, q=1).to(device)
     
     # Training loop
