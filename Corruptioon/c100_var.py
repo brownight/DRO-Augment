@@ -265,7 +265,7 @@ def train(net, train_loader, optimizer, scheduler, device):
     correct = 0
     total = 0
     
-    criterion = oldCustomLoss(rho=c, q=2).to(device)
+    criterion = oldCustomLoss(rho=1, q=1).to(device)
     
     for i, (images, targets) in enumerate(train_loader):
         optimizer.zero_grad()
