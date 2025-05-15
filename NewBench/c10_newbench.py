@@ -19,18 +19,18 @@ from scipy.ndimage import map_coordinates
 import random
 import time
 
-# 设置随机种子以确保可重复性
+
 random.seed(0)
 np.random.seed(0)
 torch.manual_seed(0)
 if torch.cuda.is_available():
     torch.cuda.manual_seed_all(0)
 
-# 忽略警告信息
+
 import warnings
 warnings.simplefilter("ignore", UserWarning)
 
-# 定义辅助函数
+
 def disk(radius, alias_blur=0.1, dtype=np.float32):
     if radius <= 8:
         L = np.arange(-8, 8 + 1)
@@ -119,7 +119,7 @@ def plasma_fractal(mapsize=32, wibbledecay=3):
     return maparray / maparray.max()
 
 
-# 定义腐蚀函数
+
 def gaussian_noise(x, severity=1):
     c = [0.035, 0.065, .085, .1, .12][severity - 1]
 
@@ -371,7 +371,7 @@ def jpeg_compression(x, severity=1):
 
     return x
 
-# 加载 CIFAR-10 数据集和数据加载器
+
 transform_train = transforms.Compose([
     transforms.RandomCrop(32, padding=4),
     transforms.RandomHorizontalFlip(),
@@ -396,14 +396,14 @@ testset = torchvision.datasets.CIFAR10(root='./data', train=False,
 testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size,
                                          shuffle=False, num_workers=8)
 
-# 定义模型、损失函数和优化器
+
 #net = resnet18(weights=ResNet18_Weights.DEFAULT)
 #net = resnet34(weights=ResNet34_Weights.DEFAULT)
 net = resnet50(weights=ResNet50_Weights.DEFAULT)
 #net = resnet101(weights=ResNet101_Weights.DEFAULT)
 net.fc = nn.Linear(net.fc.in_features, 10)
 
-# 如果有 GPU，可将模型移动到 GPU
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 net = net.to(device)
 
@@ -412,8 +412,8 @@ optimizer = optim.SGD(net.parameters(), lr=0.1,
                       momentum=0.9, weight_decay=5e-4)
 scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=200)
 
-# 训练模型
-num_epochs = 200 # 根据需要调整训练轮数
+
+num_epochs = 200 
 
 for epoch in range(num_epochs):
     net.train()
@@ -436,10 +436,10 @@ for epoch in range(num_epochs):
     end_time = time.time()
     print(f'Epoch [{epoch+1}/{num_epochs}] completed in {end_time - start_time:.2f} seconds.')
 
-# 保存模型
+
 torch.save(net.state_dict(), 'cifar10_resnet18.pth')
 
-# 定义评估函数
+
 def evaluate_on_corrupted_dataset(corruption_func, severity):
     net.eval()
     correct = 0
@@ -447,9 +447,9 @@ def evaluate_on_corrupted_dataset(corruption_func, severity):
     total_loss = 0.0
     with torch.no_grad():
         for inputs, targets in testloader:
-            # 将输入转换为 PIL 图像
+            
             inputs_pil = [transforms.ToPILImage()(inp.cpu()) for inp in inputs]
-            # 对每张图像应用腐蚀
+          
             inputs_corrupted = []
             for img_pil in inputs_pil:
                 corrupted_img = corruption_func(img_pil, severity=severity)
@@ -458,7 +458,7 @@ def evaluate_on_corrupted_dataset(corruption_func, severity):
                 else:
                     corrupted_img = PILImage.fromarray(np.uint8(corrupted_img))
                 inputs_corrupted.append(transforms.ToTensor()(corrupted_img))
-            # 将腐蚀后的图像转换为张量
+            
             inputs_corrupted = torch.stack(inputs_corrupted).to(device)
             inputs_corrupted = transforms.Normalize((0.4914, 0.4822, 0.4465), 
                                                     (0.2023, 0.1994, 0.2010))(inputs_corrupted)
@@ -473,7 +473,7 @@ def evaluate_on_corrupted_dataset(corruption_func, severity):
     avg_loss = total_loss / total
     return acc, avg_loss
 
-# 定义腐蚀类型
+
 corruption_types = [
    'gaussian_noise',
    'shot_noise',
@@ -492,7 +492,7 @@ corruption_types = [
     'jpeg_compression',
 ]
 
-# 映射腐蚀类型到函数
+
 corruption_functions = {
     'gaussian_noise': gaussian_noise,
     'shot_noise': shot_noise,
@@ -511,7 +511,7 @@ corruption_functions = {
     'jpeg_compression': jpeg_compression,
 }
 
-# 对每种腐蚀类型和严重程度进行评估
+
 for corruption_name in corruption_types:
     print(f"\n{corruption_name}:")
     for severity in range(1, 6):
